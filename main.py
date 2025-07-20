@@ -1,54 +1,58 @@
 import os
-import random
-import google.generativeai as genai
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
+import google.generativeai as genai
+from dotenv import load_dotenv
 
-# Environment Variable တွေ ရယူ
+# Load environment variables from .env file (useful for local testing)
+load_dotenv()
+
+# Get API keys
 GEMINI_API_KEY = os.getenv("AIzaSyAb-Qo0kzndfAHPciJJmztxYgU9miEWV54")
 TELEGRAM_BOT_TOKEN = os.getenv("8188050582:AAFAKpa1Qq9yTPv8omQgcWsHlBUKyEPf0-Y")
 
-# Gemini API Configure
+# Configure Gemini AI
 genai.configure(api_key=GEMINI_API_KEY)
+model = genai.GenerativeModel("gemini-pro")
 
-def generate_fake_code():
-    parts = ["".join(random.choices("0123456789", k=4)) for _ in range(4)]
-    return "-".join(parts)
-
+# Handle /start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "👋 မင်္ဂလာပါ။ ဖုန်းမော်ဒယ် (ဥပမာ iPhone 12) ပို့လိုက်ပါ၊ AI က PUBG Sensitivity ကို ပေးပါမယ်။"
+        "👋 Welcome!\n\n📱 Send me your phone model (e.g. iPhone 12, Redmi Note 13).\n\n🎯 I will generate the best PUBG sensitivity settings for you!"
     )
 
-async def handle_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    phone_model = update.message.text.strip()
-
-    if len(phone_model) < 3:
-        await update.message.reply_text("❌ ဖုန်းမော်ဒယ် မဟုတ်ပါ၊ ဥပမာ - iPhone 12, Samsung Galaxy S21")
-        return
+# Handle user input (phone model)
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_input = update.message.text.strip()
 
     prompt = f"""
-Suggest PUBG Mobile sensitivity settings for {phone_model}:
+You are a PUBG Mobile sensitivity expert.
+
+Suggest the best PUBG Mobile sensitivity settings for the phone model: {user_input}
+
+Include:
 - Camera Sensitivity
 - ADS Sensitivity
 - Gyroscope Sensitivity
-- Layout Type (2-finger/3-finger/4-finger/gyro)
+- Recommended Layout (2-finger / 3-finger / 4-finger / gyroscope)
+- Fake Sensitivity Code (e.g. 1234-5678-9101-1121)
+
+Respond in a clean, easy-to-read format.
 """
 
-    model = genai.GenerativeModel("gemini-pro")
-    response = model.generate_content(prompt)
+    try:
+        response = model.generate_content(prompt)
+        await update.message.reply_text(f"📱 Phone: {user_input}\n\n{response.text}")
+    except Exception as e:
+        await update.message.reply_text("❌ Something went wrong. Please try again.")
+        print(f"[ERROR] {e}")
 
-    fake_code = generate_fake_code()
-
-    reply = f"🤖 PUBG Sensitivity for {phone_model}:\n\n{response.text}\n\n🎮 Fake Sensitivity Code: {fake_code}"
-
-    await update.message.reply_text(reply)
-
-def main():
-    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_input))
-    app.run_polling()
-
+# Start bot
 if __name__ == "__main__":
-    main()
+    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
+
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+
+    print("✅ Bot is running...")
+    app.run_polling()
