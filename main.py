@@ -5,7 +5,7 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
 # Environment Variable တွေ ရယူ
-GEMINI_API_KEY = os.getenv("AIzaSyBTthKBzd5cJUiey1AJLBAIbY3z2rLGQUs")
+GEMINI_API_KEY = os.getenv("AIzaSyAb-Qo0kzndfAHPciJJmztxYgU9miEWV54")
 TELEGRAM_BOT_TOKEN = os.getenv("8188050582:AAFAKpa1Qq9yTPv8omQgcWsHlBUKyEPf0-Y")
 
 # Gemini API Configure
